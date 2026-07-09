@@ -1,4 +1,4 @@
-import { Events, MessageFlags } from 'discord.js';
+import { Events, MessageFlags, PermissionFlagsBits } from 'discord.js';
 import { logger } from '../utils/logger.js';
 import { getGuildConfig } from '../services/guildConfig.js';
 import { handleApplicationModal } from '../commands/Community/apply.js';
@@ -118,7 +118,7 @@ export default {
               logger.error('Error handling command autocomplete:', {
                 error: error.message,
                 guildId: interaction.guildId,
-                commandName: interaction.commandName,
+                commandName: interaction.commandName
               });
               await interaction.respond([]).catch(() => {});
             }
@@ -248,6 +248,60 @@ export default {
             }
           }
         } else if (interaction.isButton()) {
+          // ====== START VOICE CHANNEL CONTROL DASHBOARD HANDLER ======
+          if (interaction.customId.startsWith('jtc_lock_') || 
+              interaction.customId.startsWith('jtc_unlock_') || 
+              interaction.customId.startsWith('jtc_hide_') || 
+              interaction.customId.startsWith('jtc_reveal_')) {
+            
+            const parts = interaction.customId.split('_');
+            const action = parts[1];
+            const ownerId = parts[2];
+            const { member, guild, channel } = interaction;
+
+            if (member.id !== ownerId && !member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+              return interaction.reply({ 
+                content: '❌ Only the room creator or a staff member can use this dashboard.', 
+                flags: MessageFlags.Ephemeral 
+              });
+            }
+
+            if (!channel || channel.type !== 2) { 
+              return interaction.reply({ content: '❌ This can only be executed inside a temporary voice channel.', flags: MessageFlags.Ephemeral });
+            }
+
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+            try {
+              switch (action) {
+                case 'lock':
+                  await channel.permissionOverwrites.edit(guild.roles.everyone, { Connect: false });
+                  await interaction.editReply({ content: '🔒 Your voice channel has been **Locked**. New users can no longer join.' });
+                  break;
+
+                case 'unlock':
+                  await channel.permissionOverwrites.edit(guild.roles.everyone, { Connect: null });
+                  await interaction.editReply({ content: '🔓 Your voice channel is now **Unlocked**. Anyone can join.' });
+                  break;
+
+                case 'hide':
+                  await channel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: false });
+                  await interaction.editReply({ content: '👻 Your voice channel is now **Hidden** from the sidebar list.' });
+                  break;
+
+                case 'reveal':
+                  await channel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: null });
+                  await interaction.editReply({ content: '👁️ Your voice channel is now **Visible** to everyone.' });
+                  break;
+              }
+            } catch (error) {
+              logger.error('Error running JTC voice dashboard action:', error);
+              await interaction.editReply({ content: '❌ Failed to update channel settings. Make sure my bot role is high enough in the server role hierarchy!' });
+            }
+            return;
+          }
+          // ====== END VOICE CHANNEL CONTROL DASHBOARD HANDLER ======
+
           if (interaction.customId.startsWith('shared_todo_')) {
             const parts = interaction.customId.split('_');
             const buttonType = parts.slice(0, 3).join('_');
@@ -370,7 +424,6 @@ export default {
 
           if (!modal) {
             if (!interaction.customId.includes(':')) {
-
               return;
             }
 
