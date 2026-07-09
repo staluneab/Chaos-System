@@ -256,18 +256,23 @@ export default {
             
             const parts = interaction.customId.split('_');
             const action = parts[1];
-            const ownerId = parts[2];
-            const { member, guild, channel } = interaction;
+            const { member, guild } = interaction;
+            
+            const voiceChannel = member.voice.channel;
 
-            if (member.id !== ownerId && !member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+            if (!voiceChannel || voiceChannel.type !== 2) { 
               return interaction.reply({ 
-                content: '❌ Only the room creator or a staff member can use this dashboard.', 
+                content: '❌ You must be connected to your temporary voice channel to use these controls.', 
                 flags: MessageFlags.Ephemeral 
               });
             }
 
-            if (!channel || channel.type !== 2) { 
-              return interaction.reply({ content: '❌ This can only be executed inside a temporary voice channel.', flags: MessageFlags.Ephemeral });
+            if (!member.permissions.has(PermissionFlagsBits.ManageChannels) && 
+                !voiceChannel.name.toLowerCase().includes(member.displayName.toLowerCase())) {
+              return interaction.reply({ 
+                content: '❌ You can only manage a room that you own or are currently inside.', 
+                flags: MessageFlags.Ephemeral 
+              });
             }
 
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -275,22 +280,22 @@ export default {
             try {
               switch (action) {
                 case 'lock':
-                  await channel.permissionOverwrites.edit(guild.roles.everyone, { Connect: false });
+                  await voiceChannel.permissionOverwrites.edit(guild.roles.everyone, { Connect: false });
                   await interaction.editReply({ content: '🔒 Your voice channel has been **Locked**. New users can no longer join.' });
                   break;
 
                 case 'unlock':
-                  await channel.permissionOverwrites.edit(guild.roles.everyone, { Connect: null });
+                  await voiceChannel.permissionOverwrites.edit(guild.roles.everyone, { Connect: null });
                   await interaction.editReply({ content: '🔓 Your voice channel is now **Unlocked**. Anyone can join.' });
                   break;
 
                 case 'hide':
-                  await channel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: false });
+                  await voiceChannel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: false });
                   await interaction.editReply({ content: '👻 Your voice channel is now **Hidden** from the sidebar list.' });
                   break;
 
                 case 'reveal':
-                  await channel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: null });
+                  await voiceChannel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: null });
                   await interaction.editReply({ content: '👁️ Your voice channel is now **Visible** to everyone.' });
                   break;
               }
