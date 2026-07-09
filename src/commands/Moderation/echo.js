@@ -17,7 +17,7 @@ export default {
 
     async execute(interaction, config, client) {
         try {
-            const textToRepeat = interaction.options.getString("message");
+            const textToRepeat = interaction.options.getString("message").replace(/\\n/g, '\n');
 
             // Send a hidden "success" message to the Admin so the command doesn't error out
             await interaction.reply({ content: "Message sent!", ephemeral: true });
