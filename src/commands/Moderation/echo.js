@@ -1,29 +1,33 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { PermissionFlagsBits } from 'discord.js';
 
 export default {
-    data: new SlashCommandBuilder()
-        .setName("echo")
-        .setDescription("Repeats the message you provide.")
-        .addStringOption(option =>
-            option
-                .setName("message")
-                .setDescription("The text you want the bot to repeat")
-                .setRequired(true)
-        ),
-    category: "community", // Change this to match the folder name (e.g., "fun", "core")
+    name: "echo",
+    description: "Repeats a message (Admin only)",
+    category: "community", // Change to match your folder name
 
-    async execute(interaction, config, client) {
+    async execute(message, args, client) {
         try {
-            // 1. Get the text that the user typed
-            const textToRepeat = interaction.options.getString("message");
+            // 1. Check if the user has Administrator permissions
+            if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+                return message.reply("❌ You do not have permission to use this command.");
+            }
 
-            // 2. Reply back with that exact message
-            await interaction.reply(textToRepeat);
-            
+            // 2. Get the text after the command
+            const textToRepeat = args.join(' ');
+
+            // 3. Make sure they actually typed something to repeat
+            if (!textToRepeat) {
+                return message.reply("Please provide a message for me to repeat.");
+            }
+
+            // 4. Delete the original message so only the bot's message shows
+            await message.delete().catch(() => null);
+
+            // 5. Send the repeated text
+            await message.channel.send(textToRepeat);
+
         } catch (error) {
-            console.error("Error running echo command:", error);
-            // Optional: If you want to use your custom error handling:
-            // handleInteractionError(interaction, error);
+            console.error("Error in echo command:", error);
         }
     }
 };
