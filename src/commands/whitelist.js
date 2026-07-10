@@ -10,7 +10,7 @@ const dbConfig = {
 };
 
 export const data = new SlashCommandBuilder()
-    .setName('whitelist')
+    .setName('mta-whitelist')
     .setDescription('Add a player to the MNC Roleplay whitelist')
     .addStringOption(option => 
         option.setName('serial')
