@@ -3,10 +3,10 @@ import mysql from 'mysql2/promise';
 
 // ⚠️ Put your actual database details here
 const dbConfig = {
-    host: 'localhost', 
-    user: 'root',
-    password: 'your_database_password',
-    database: 'mnc_roleplay' 
+    host: '51.83.49.125', 
+    user: 'u233991_OQAt8Dason',
+    password: 'f^U+cs74Z9TEPrHwiZOJyZ0M',
+    database: 's233991_db1783354186802' 
 };
 
 export const data = new SlashCommandBuilder()
