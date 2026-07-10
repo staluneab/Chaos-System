@@ -1,8 +1,9 @@
-﻿import 'dotenv/config';
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import 'dotenv/config';
+import { Client, Collection, GatewayIntentBits, EmbedBuilder } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import express from 'express';
 import cron from 'node-cron';
+import mysql from 'mysql2/promise'; // Imported for the MTA Whitelist integration
 
 import config from './config/application.js';
 import { initializeDatabase } from './utils/database.js';
@@ -17,21 +18,25 @@ import { shutdownMusic } from './services/music/playerHandler.js';
 import pkg from '../package.json' with { type: 'json' };
 import { EXPECTED_SCHEMA_VERSION, EXPECTED_SCHEMA_LABEL } from './config/schemaVersion.js';
 
+// Configuration details for your MTA Database host
+const mtaDbConfig = {
+    host: '51.83.49.125', 
+    user: 'u23391_OQAt8Dason',
+    password: 'f^U+cs74Z9TEPrHwiZOJyZ0M',
+    database: 's23391_db1783354186802' 
+};
+
 class TitanBot extends Client {
   constructor() {
     super({
       intents: [
-        
         GatewayIntentBits.Guilds,                        
         GatewayIntentBits.GuildMembers,                 
-
         GatewayIntentBits.GuildMessages,                
         GatewayIntentBits.GuildMessageReactions,        
         GatewayIntentBits.MessageContent,               
         GatewayIntentBits.DirectMessages,
-
         GatewayIntentBits.GuildVoiceStates,             
-
         GatewayIntentBits.GuildBans,                    
       ],
     });
@@ -61,10 +66,10 @@ class TitanBot extends Client {
       if (dbStatus.isDegraded) {
         logger.warn('');
         logger.warn('╔═══════════════════════════════════════════════════════╗');
-        logger.warn('║ ⚠️  DATABASE RUNNING IN DEGRADED MODE                 ║');
+        logger.warn('║ ⚠️  DATABASE RUNNING IN DEGRADED MODE                  ║');
         logger.warn('║                                                       ║');
         logger.warn('║ Connection: In-Memory Storage (PostgreSQL unavailable)║');
-        logger.warn('║ Data Persistence: DISABLED - data lost on restart    ║');
+        logger.warn('║ Data Persistence: DISABLED - data lost on restart     ║');
         logger.warn('║ Action Required: Fix PostgreSQL and restart bot      ║');
         logger.warn('╚═══════════════════════════════════════════════════════╝');
         logger.warn('');
@@ -98,6 +103,58 @@ class TitanBot extends Client {
       }
       startupLog('Slash commands registration complete');
       
+      // Hook up the Custom MTA text-based whitelist listener
+      this.on('messageCreate', async (message) => {
+          if (message.author.bot) return;
+
+          if (message.content.startsWith('!mta-whitelist')) {
+              if (!message.member.permissions.has('Administrator')) {
+                  return message.reply('❌ You do not have permission to use this command.');
+              }
+
+              const args = message.content.split(' ');
+              const serial = args[1]?.toUpperCase().trim();
+              const targetUser = message.mentions.users.first();
+
+              if (!serial || serial.length !== 32 || !targetUser) {
+                  return message.reply('⚠️ **Usage:** `!mta-whitelist <32_character_serial> @User`');
+              }
+
+              try {
+                  const connection = await mysql.createConnection(mtaDbConfig);
+                  
+                  const [rows] = await connection.execute('SELECT * FROM whitelist WHERE mta_serial = ?', [serial]);
+                  if (rows.length > 0) {
+                      await connection.end();
+                      return message.reply('⚠️ This MTA serial is already whitelisted.');
+                  }
+
+                  await connection.execute(
+                      'INSERT INTO whitelist (discord_id, mta_serial, added_by) VALUES (?, ?, ?)',
+                      [targetUser.id, serial, message.author.tag]
+                  );
+                  await connection.end();
+
+                  const embed = new EmbedBuilder()
+                      .setColor('#FFD700') 
+                      .setTitle('✅ Player Whitelisted')
+                      .setDescription(`Successfully granted access to **MNC Roleplay**`)
+                      .addFields(
+                          { name: 'Discord User', value: `${targetUser}`, inline: true },
+                          { name: 'MTA Serial', value: `\`${serial}\``, inline: true },
+                          { name: 'Authorized By', value: `${message.author.tag}`, inline: true }
+                      )
+                      .setTimestamp();
+
+                  return message.reply({ embeds: [embed] });
+
+              } catch (error) {
+                  console.error(error);
+                  return message.reply('❌ A database connection error occurred. Check your database credentials.');
+              }
+          }
+      });
+
       const databaseMode = dbStatus.isDegraded
         ? 'Optional in-memory mode (data resets after restart)'
         : 'Connected (persistent data enabled)';
@@ -282,8 +339,6 @@ class TitanBot extends Client {
           }
         }
         
-        // Save cleaned counters if any were orphaned
-        // Save cleaned counters if any were orphaned
         if (orphanedCounters.length > 0) {
           await saveServerCounters(this, guildId, validCounters);
           logger.info(`Cleaned up ${orphanedCounters.length} orphaned counter(s) from guild ${guildId} during scheduled update`);
@@ -342,7 +397,6 @@ class TitanBot extends Client {
     logger.info(`${'='.repeat(60)}`);
 
     try {
-      
       logger.info('Stopping cron jobs...');
       cron.getTasks().forEach(task => task.stop());
       logger.info('✅ Cron jobs stopped');
@@ -351,8 +405,6 @@ class TitanBot extends Client {
       await shutdownMusic(this);
       logger.info('✅ Music players stopped');
 
-      // Close database connection
-      // Close database connection
       if (this.db && this.db.db) {
         logger.info('Closing database connection...');
         try {
@@ -371,13 +423,12 @@ class TitanBot extends Client {
           this.destroy();
           logger.info('✅ Discord client destroyed');
         } catch (error) {
-
           logger.warn('Discord client destroy warning (non-critical):', error.message);
         }
       }
 
       logger.info('✅ Graceful shutdown complete');
-  shutdownLog('Bot stopped successfully.');
+      shutdownLog('Bot stopped successfully.');
       process.exit(0);
     } catch (error) {
       logger.error('Error during graceful shutdown:', error);
