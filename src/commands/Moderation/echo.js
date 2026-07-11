@@ -25,19 +25,19 @@ export default {
             const title = interaction.options.getString("title");
             const rawMessage = interaction.options.getString("message");
             
-            // Replaces typed \n with actual formatting breaks
+            // Replaces typed \n with actual formatting line breaks
             const formattedMessage = rawMessage.replace(/\\n/g, '\n');
 
-            // Build the clean blue embed
+            // Build the clean blue embed structure
             const embed = new EmbedBuilder()
                 .setTitle(title)
                 .setDescription(formattedMessage)
-                .setColor("#5865F2"); // Fixed! Clean Discord Blurple Blue border
+                .setColor("#5865F2"); // Clean Discord Blue border
 
-            // Send a hidden confirmation to the Admin so Discord doesn't error out
+            // Send the hidden confirmation to the Admin so Railway/Discord doesn't timeout
             await interaction.reply({ content: "Embed sent successfully!", ephemeral: true });
 
-            // Post the clean blue embed into the channel natively
+            // Post the clean blue embed directly into the channel natively
             await interaction.channel.send({ embeds: [embed] });
 
         } catch (error) {
