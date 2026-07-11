@@ -3,7 +3,7 @@ import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.
 export default {
     data: new SlashCommandBuilder()
         .setName("echo")
-        .setDescription("Sends a clean yellow embed message (Admin only)")
+        .setDescription("Sends a clean yellow embed message directly (Admin only)")
         .addStringOption(option =>
             option
                 .setName("title")
@@ -32,12 +32,15 @@ export default {
             const embed = new EmbedBuilder()
                 .setTitle(title)
                 .setDescription(formattedMessage)
-                .setColor("#FEE75C"); // Bright Yellow/Gold border matching your theme
+                .setColor("#FEE75C"); // Bright Yellow/Gold border
 
-            // 1. First, send a hidden confirmation response so the command successfully closes
-            await interaction.reply({ content: "✅ Embed posted successfully below!", ephemeral: true });
+            // 1. Reply secretly first to handle Discord's system requirement
+            await interaction.reply({ content: "Processing...", ephemeral: true });
 
-            // 2. Send the actual public embed directly into the channel for everyone to see
+            // 2. Instantly delete the system reply so it disappears completely
+            await interaction.deleteReply();
+
+            // 3. Send the clean, gorgeous embed natively to the channel
             await interaction.channel.send({ embeds: [embed] });
 
         } catch (error) {
