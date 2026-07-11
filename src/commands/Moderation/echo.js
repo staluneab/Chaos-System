@@ -32,7 +32,7 @@ export default {
             const embed = new EmbedBuilder()
                 .setTitle(title)
                 .setDescription(formattedMessage)
-                .setColor("#35865F2"); // Clean Blue border
+                .setColor("#5865F2"); // Fixed! Clean Discord Blurple Blue border
 
             // Send a hidden confirmation to the Admin so Discord doesn't error out
             await interaction.reply({ content: "Embed sent successfully!", ephemeral: true });
