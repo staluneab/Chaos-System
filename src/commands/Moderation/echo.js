@@ -7,11 +7,11 @@ import {
 export default {
     data: new SlashCommandBuilder()
         .setName("echo")
-        .setDescription("Send a styled embed (Admin only)")
+        .setDescription("Send an embed")
         .addStringOption(option =>
             option
                 .setName("message")
-                .setDescription("Message to send inside the embed")
+                .setDescription("Message to send")
                 .setRequired(true)
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
@@ -20,16 +20,16 @@ export default {
 
     async execute(interaction) {
         try {
-            const rawMessage = interaction.options.getString("message");
-            const formattedMessage = rawMessage.replace(/\\n/g, "\n");
+            const message = interaction.options
+                .getString("message")
+                .replace(/\\n/g, "\n");
 
             const embed = new EmbedBuilder()
-                .setColor("#5865F2") // Blue left border
-                .setDescription(formattedMessage)
-                .setTimestamp();
+                .setColor(0x5865F2)
+                .setDescription(message);
 
             await interaction.reply({
-                content: "✅ Embed sent.",
+                content: "✅ Sent!",
                 ephemeral: true
             });
 
@@ -37,12 +37,12 @@ export default {
                 embeds: [embed]
             });
 
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
 
             if (!interaction.replied) {
                 await interaction.reply({
-                    content: "❌ An error occurred.",
+                    content: "❌ Error sending embed.",
                     ephemeral: true
                 });
             }
