@@ -3,7 +3,7 @@ import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.
 export default {
     data: new SlashCommandBuilder()
         .setName("echo")
-        .setDescription("Sends a clean blue embed message (Admin only)")
+        .setDescription("Sends a clean yellow embed message (Admin only)")
         .addStringOption(option =>
             option
                 .setName("title")
@@ -28,16 +28,16 @@ export default {
             // Replaces typed \n with actual formatting line breaks
             const formattedMessage = rawMessage.replace(/\\n/g, '\n');
 
-            // Build the clean blue embed structure
+            // Build the clean yellow/gold embed structure
             const embed = new EmbedBuilder()
                 .setTitle(title)
                 .setDescription(formattedMessage)
-                .setColor("#5865F2"); // Clean Discord Blue border
+                .setColor("#FEE75C"); // Bright Yellow/Gold border matching your theme
 
-            // Send the hidden confirmation to the Admin so Railway/Discord doesn't timeout
-            await interaction.reply({ content: "Embed sent successfully!", ephemeral: true });
+            // 1. First, send a hidden confirmation response so the command successfully closes
+            await interaction.reply({ content: "✅ Embed posted successfully below!", ephemeral: true });
 
-            // Post the clean blue embed directly into the channel natively
+            // 2. Send the actual public embed directly into the channel for everyone to see
             await interaction.channel.send({ embeds: [embed] });
 
         } catch (error) {
