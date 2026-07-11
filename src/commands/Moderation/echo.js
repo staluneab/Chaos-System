@@ -1,51 +1,22 @@
 import {
     SlashCommandBuilder,
-    PermissionFlagsBits,
     EmbedBuilder
 } from "discord.js";
 
 export default {
     data: new SlashCommandBuilder()
         .setName("echo")
-        .setDescription("Send an embed")
-        .addStringOption(option =>
-            option
-                .setName("message")
-                .setDescription("Message to send")
-                .setRequired(true)
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-
-    category: "community",
+        .setDescription("Test embed"),
 
     async execute(interaction) {
-        try {
-            const message = interaction.options
-                .getString("message")
-                .replace(/\\n/g, "\n");
 
-            const embed = new EmbedBuilder()
-                .setColor(0x5865F2)
-                .setDescription(message);
+        const embed = new EmbedBuilder()
+            .setTitle("EMBED TEST")
+            .setDescription("If you can read this inside a Discord embed, the command is working.")
+            .setColor(0x5865F2);
 
-            await interaction.reply({
-                content: "✅ Sent!",
-                ephemeral: true
-            });
-
-            await interaction.channel.send({
-                embeds: [embed]
-            });
-
-        } catch (err) {
-            console.error(err);
-
-            if (!interaction.replied) {
-                await interaction.reply({
-                    content: "❌ Error sending embed.",
-                    ephemeral: true
-                });
-            }
-        }
+        await interaction.reply({
+            embeds: [embed]
+        });
     }
 };
