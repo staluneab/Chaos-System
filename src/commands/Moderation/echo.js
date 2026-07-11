@@ -1,38 +1,51 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import {
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    EmbedBuilder
+} from "discord.js";
 
 export default {
     data: new SlashCommandBuilder()
         .setName("echo")
-        .setDescription("Sends a clean blue embed message (Admin only)")
+        .setDescription("Send a styled embed (Admin only)")
         .addStringOption(option =>
             option
                 .setName("message")
-                .setDescription("The text to put inside the blue border box")
+                .setDescription("Message to send inside the embed")
                 .setRequired(true)
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-        
-    category: "community", 
 
-    async execute(interaction, config, client) {
+    category: "community",
+
+    async execute(interaction) {
         try {
             const rawMessage = interaction.options.getString("message");
-            const formattedMessage = rawMessage.replace(/\\n/g, '\n');
+            const formattedMessage = rawMessage.replace(/\\n/g, "\n");
 
-            // The perfect clean blue embed box
             const embed = new EmbedBuilder()
+                .setColor("#5865F2") // Blue left border
                 .setDescription(formattedMessage)
-                .setColor("#5865F2"); // Clean Blue Border
+                .setTimestamp();
 
-            // 1. Reply invisibly so the command successfully closes
-            await interaction.reply({ content: "Sending...", ephemeral: true });
-            await interaction.deleteReply();
+            await interaction.reply({
+                content: "✅ Embed sent.",
+                ephemeral: true
+            });
 
-            // 2. Publicly drop the clean blue embed into the channel
-            await interaction.channel.send({ embeds: [embed] });
+            await interaction.channel.send({
+                embeds: [embed]
+            });
 
         } catch (error) {
-            console.error("Error with echo command:", error);
+            console.error(error);
+
+            if (!interaction.replied) {
+                await interaction.reply({
+                    content: "❌ An error occurred.",
+                    ephemeral: true
+                });
+            }
         }
     }
 };
