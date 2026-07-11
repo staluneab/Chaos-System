@@ -3,17 +3,11 @@ import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.
 export default {
     data: new SlashCommandBuilder()
         .setName("echo")
-        .setDescription("Sends a clean yellow embed message directly (Admin only)")
-        .addStringOption(option =>
-            option
-                .setName("title")
-                .setDescription("The title at the top of the embed")
-                .setRequired(true)
-        )
+        .setDescription("Envoie un embed style bulle iMessage iPhone (Admin uniquement)")
         .addStringOption(option =>
             option
                 .setName("message")
-                .setDescription("The main description text (supports **bold** and \\n)")
+                .setDescription("Le contenu de la bulle de message textuelle")
                 .setRequired(true)
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
@@ -22,29 +16,22 @@ export default {
 
     async execute(interaction, config, client) {
         try {
-            const title = interaction.options.getString("title");
             const rawMessage = interaction.options.getString("message");
-            
-            // Replaces typed \n with actual formatting line breaks
             const formattedMessage = rawMessage.replace(/\\n/g, '\n');
 
-            // Build the clean yellow/gold embed structure
-            const embed = new EmbedBuilder()
-                .setTitle(title)
+            // Création de l'embed au format épuré "iOS style"
+            const iOSMessageEmbed = new EmbedBuilder()
                 .setDescription(formattedMessage)
-                .setColor("#FEE75C"); // Bright Yellow/Gold border
+                .setColor("#007AFF"); // Bleu iMessage officiel d'Apple
 
-            // 1. Reply secretly first to handle Discord's system requirement
-            await interaction.reply({ content: "Processing...", ephemeral: true });
+            // 1. Envoi d'une notification invisible de confirmation
+            await interaction.reply({ content: "📲 Bulle iPhone envoyée !", ephemeral: true });
 
-            // 2. Instantly delete the system reply so it disappears completely
-            await interaction.deleteReply();
-
-            // 3. Send the clean, gorgeous embed natively to the channel
-            await interaction.channel.send({ embeds: [embed] });
+            // 2. Envoi direct de l'embed iMessage dans le salon
+            await interaction.channel.send({ embeds: [iOSMessageEmbed] });
 
         } catch (error) {
-            console.error("Error with echo command:", error);
+            console.error("Erreur lors de l'envoi du message style iPhone :", error);
         }
     }
 };
