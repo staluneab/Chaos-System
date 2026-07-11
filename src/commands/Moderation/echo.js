@@ -3,24 +3,18 @@ import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.
 export default {
     data: new SlashCommandBuilder()
         .setName("echo")
-        .setDescription("Sends a clean embed message (Admin only)")
+        .setDescription("Sends a clean blue embed message (Admin only)")
         .addStringOption(option =>
             option
-                .setName("message")
-                .setDescription("The main description text (use \\n for new lines)")
+                .setName("title")
+                .setDescription("The title at the top of the embed")
                 .setRequired(true)
         )
         .addStringOption(option =>
             option
-                .setName("title")
-                .setDescription("Optional: The title at the top of the embed")
-                .setRequired(false)
-        )
-        .addStringOption(option =>
-            option
-                .setName("color")
-                .setDescription("Optional: Border color hex code (e.g., #FF0000 for Red, #0000FF for Blue)")
-                .setRequired(false)
+                .setName("message")
+                .setDescription("The main description text (supports **bold** and \\n)")
+                .setRequired(true)
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         
@@ -28,33 +22,26 @@ export default {
 
     async execute(interaction, config, client) {
         try {
-            // 1. Get arguments and handle line breaks (\n)
-            const rawText = interaction.options.getString("message");
-            const textToRepeat = rawText.replace(/\\n/g, '\n');
-            const embedTitle = interaction.options.getString("title");
+            const title = interaction.options.getString("title");
+            const rawMessage = interaction.options.getString("message");
             
-            // Default to blue/purple if no hex code is provided
-            let embedColor = interaction.options.getString("color") || "#5865F2"; 
-            if (!embedColor.startsWith('#')) embedColor = `#${embedColor}`;
+            // Replaces typed \n with actual formatting breaks
+            const formattedMessage = rawMessage.replace(/\\n/g, '\n');
 
-            // 2. Build the Embed
+            // Build the clean blue embed
             const embed = new EmbedBuilder()
-                .setDescription(textToRepeat)
-                .setColor(embedColor);
+                .setTitle(title)
+                .setDescription(formattedMessage)
+                .setColor("#35865F2"); // Clean Blue border
 
-            // Only add a title if the admin provided one
-            if (embedTitle) {
-                embed.setTitle(embedTitle);
-            }
+            // Send a hidden confirmation to the Admin so Discord doesn't error out
+            await interaction.reply({ content: "Embed sent successfully!", ephemeral: true });
 
-            // 3. Send a hidden confirmation to the Admin so Discord doesn't error out
-            await interaction.reply({ content: "Embed message sent!", ephemeral: true });
-
-            // 4. Post the gorgeous embed cleanly into the channel
+            // Post the clean blue embed into the channel natively
             await interaction.channel.send({ embeds: [embed] });
 
         } catch (error) {
-            console.error("Error in echo embed command:", error);
+            console.error("Error with echo command:", error);
         }
     }
 };
