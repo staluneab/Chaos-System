@@ -1,53 +1,38 @@
 import {
     SlashCommandBuilder,
     PermissionFlagsBits,
-    EmbedBuilder
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    ActionRowBuilder
 } from "discord.js";
 
 export default {
     data: new SlashCommandBuilder()
         .setName("echo")
-        .setDescription("Send a custom embed (Admin only)")
-        .addStringOption(option =>
-            option
-                .setName("message")
-                .setDescription("The message to send")
-                .setRequired(true)
-        )
+        .setDescription("Open a message editor")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     category: "community",
 
     async execute(interaction) {
-        try {
-            let message = interaction.options.getString("message");
 
-            // Convert \n into real line breaks
-            message = message.replace(/\\n/g, "\n");
+        const modal = new ModalBuilder()
+            .setCustomId("echoModal")
+            .setTitle("Create Announcement");
 
-            const embed = new EmbedBuilder()
-                .setColor("#5865F2")
-                .setDescription(message)
-                .setTimestamp();
+        const messageInput = new TextInputBuilder()
+            .setCustomId("echoMessage")
+            .setLabel("Your Message")
+            .setStyle(TextInputStyle.Paragraph)
+            .setPlaceholder("Type your announcement here...")
+            .setRequired(true)
+            .setMaxLength(4000);
 
-            await interaction.reply({
-                content: "✅ Message sent.",
-                ephemeral: true
-            });
+        modal.addComponents(
+            new ActionRowBuilder().addComponents(messageInput)
+        );
 
-            await interaction.channel.send({
-                embeds: [embed]
-            });
-
-        } catch (error) {
-            console.error(error);
-
-            if (!interaction.replied) {
-                await interaction.reply({
-                    content: "❌ Failed to send the message.",
-                    ephemeral: true
-                });
-            }
-        }
+        await interaction.showModal(modal);
     }
 };
